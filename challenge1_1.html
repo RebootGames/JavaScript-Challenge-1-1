@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+	<!-- 
+		This challenge builds on your previous programming experience AND introduces a lot of new things.
+
+		let start using some external libraries - first, we will use google's cdn service to load the jquery library
+		jquery is a lightweight, "write less, do more", javascript library. in essence, its purpose is simply to make it much easier to use 
+		javascript in your program - the library takes a lot of common tasks that normally require many lines of code to accomplish and wraps 
+		them into methods (functions) that we can quickly execute (call).  jquery also creates easier and cross platform compatible wrapper 
+		functions for more complex tasks like ajax calls and DOM manipulation. in addition it also provides added functions for features such as:
+			html event methods
+			effects and animations
+			utilities
+
+		as a programmer its important to be comfortable with using external services and plugins like jquery, etc - however, it is critically 
+		that YOU understand the wider aspects like what problem you solving, how you are going to solve it and why you're doing it the way you are and how.
+
+		in this program we have introduced two main loops: 
+			a logic loop (fnlogicloop) which is used to apply all the game behaviours (this is a bit limited at the moment but we weill be developing it over the next few tutorials). 
+				the logic loop repeats based on the value set during the initialisation routine, the logic doesnt need to be as fast as the animation loop
+			an animation loop (fnanimationloop), the animation loop repeats as fast as possible (the frame rate is displayed in the console and should be between 40 to 70 frames per second; how many times it loops per second).
+				the animation loop resets the canvas and draws each of the images at their specific positions and in z-order (starting from the background to the foreground); for more info search 'z order graphics' online 
+
+		some important points:
+			the following keycodes represent specific keys on the keyboard
+				left arrow - 37
+				right arrow - 39
+				up arrow - 38
+				down arrow - 40
+				space bar - 32
+
+
+		Tasks:
+			1. Get this program running in Chrome and test it; enable to console and use the 'right arrow' key to move the red plane right.
+			2. in groups of 2 (or 3 if absolutely necessary) review the comments and the full code before working together to create a flowchart that represents 
+				the logic, order and structure of the program; you don't need to flowchart the instructions within functions only the function names. 
+				once you have created your flowchart review and compare yours with at least 2 other groups.  following you reviews, update your diagram based on any new insights, thoughts or feedback.
+			3. in your group discuss each of the function and identify any instructions you are familiar with, as a group research and document (in short form) these unknown or unfamiliar instructions so that you know what they are doing
+			4. At the moment the game only lasts for a short time - as an individual (but supported by your group), review the program and update it so that it lasts for at least 30 seconds.
+			5. As an individual (but supported by your group), expand the game so that it supports the 'left arrow' key to move the plane left; the best way to do this is to fully review then update the function "fnKeyboardHandler_KeyPressed" 
+				so that you are checking for an appropriate keycode and performing an appropriate process so that the plane can be controlled left
+			6. As an individual (but supported by your group), expand the game so that if the plane goes off the right edge it reappears on the left (as vice versa)
+
+	-->
+	<head>
+		<title>
+			Challenge1_1
+		</title>
+		<style>
+			body { /* this is a tag selector - this style block will be applied to all <body> tags; however, there should only be one actual <body> tag */
+				background-color: #a0a0a0; /* set the background colour of the html body */
+				width: 100%; /* ensure that the body uses the entire width of the browser */
+				height: 100%; /* ensure that the body uses the entire height of the browser */
+				overflow: hidden; /* ensure that anything 'outside' or 'overflowing' the body is automatically hidden */
+				margin: 0px 0px 0px 0px; /* turn off any margin value for top, right, bottom, left, for more info on this please see https://www.w3schools.com/css/css_margin.asp */
+				padding: 0px 0px 0px 0px; /* turn off any padding value for top, right, bottom, left, for more info on the please see https://www.w3schools.com/css/css_padding.asp 
+				/* 
+					margin and padding can be used to style any html 'box' elements like 'div', 'body', etc. for more info on html box models please search 'html box model' online 
+					in essense, by setting both the margin and padding (top, right, bottom, left) properties we can ensure this 'this' box (in this case the body) sits exactley up against the edge of the parent container 
+				*/
+			}
+
+			#gameContainer { /* this is an id selector - this style block will be applied to objects with the same id */
+				position: relative;
+			}
+
+			#gameCanvas { /* this is an id selector - this style block will be applied to objects with the same id */
+				position: fixed; /* position the canvas relative to the browser window, for more info on positiion see https://www.w3schools.com/cssref/pr_class_position.asp */
+				background-color: #ffffff;
+				left: 0px;
+				top: 0px;
+			}
+
+			#gameDialogueBox { /* this is an id selector - this style block will be applied to the gamedialoguebox object */
+				position:fixed;
+				background-color: #ffffff;
+				border-radius: 15px 50px; /* this creates two different border radius */
+				opacity: 0.75; /* make it slightly transparent */
+				width: 33%; /* the following styles should allow the box to be centred in the screen */
+				height: 33%;
+				margin:auto;
+				top:0px;
+				bottom:0px;
+				left:0px;
+				right:0px;
+
+				display: none; /* set the style so the element/object is not displayed */
+			}
+
+			#gameDialogueBoxText { /* this is an id selector - this style block will be applied to the gamedialogueboxtext object */
+				font-family: Bookman;
+				font-size: 40px;
+				font-weight: 800;
+				color: #4e7ea3;
+
+				position: relative; /* try to centre the text in the middle of the parent container */
+				top: 50%;
+				transform: translateY(-50%); 
+				text-align: center;
+			}
+
+		</style>
+
+		<!-- 
+			load the jquery library using googles cdn service.  a cdn is a content delivery network (CDN) of distributed servers (a network) that delivers 
+			pages and other WWeb content to a user, based on their geographic location as well as the origin of the webpage and the content delivery server.
+			cdn's are commonly used to delivery dynamic content to online gamers but are also very common within the field of serious development projects
+		-->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+		<script>
+			//The "use strict" directive was new in ECMAScript version 5. It is not a statement, but a literal expression, 
+			//ignored by earlier versions of JavaScript. The purpose of "use strict" is to indicate that the code should be 
+			//executed in "strict mode". With strict mode, you can not, for example, use undeclared variables.
+			"use strict"; 
+
+
+			//declare the programs global variables, global variables are available throughout the entire program rather than only wihin the function they are declared			
+			var iLogicLoopId, iAnimationLoopId; //define variables used to hold the logicloop and animaterequestframe id
+			var iLogicFrameCount = 0, iAnimateFrameCount = 0; //define variables used to hold the counts for the logic and animate loops
+			var iGameStartTime = 0; //initialise the variable used to store the time index the game started
+			var iLastFrameTime = 0; //initialise the variable used to calculate the frames per second rate
+			var bContinuePlay = true; //declare a boolean variable used to control the game state 
+
+
+			//an array is exactly the same as a variable, except instead of being a single box, and array is like a 
+			//collection of boxes - imgPic[0] is the first box, imgPic[1] is the second, imgPic[2] is the third, etc
+			//arrays are common and powerful data structures that provide many benefits for a programmer – the first is that 
+			//we can increment the index (i.e. [0], [1], [2], etc) and not worry about changing the variables name to access 
+			//each of the variable’s boxes; we can keep growing the array until we run out of available memory
+			var imgPic = new Array(); //declare an array called imgPic, the array will create a collection of variables all called imgPic; imgPic[0], imgPic[1], etc
+
+	
+			var oCanvas, oContext; //declare two global variables, one to hold the canvas object, one to hold the drawing surface of the canvas
+			var bShowDebugMessages = true; //use this flag (boolean value) to enable/disable the messages from being sent to the console; if we publish the game we dont need everyone seeing our debug messages
+			var iAutoExitInSeconds = 5; //this global variable is used by the program to terminate the loops and events activated during the execution
+
+
+			function fnDebugMessage(sString) {
+				//this function posts a message to the console log, by routing all debug messages through this function we can quickly turn all console messages off (if/when we want)
+				if(bShowDebugMessages == true) {
+					console.log("debug: " + sString); //concatenate the user provided string (sString) to the hardcoded string ("debug") to then pass it to the log function within the console object to show the message in the browser's developer window
+				}
+			}	
+
+
+			function fnNowMS() {
+				//this function returns the current time index in milliseconds based on epoch date, in computing terms epoch is (generally) considered to tbe he number of seconds that have elapsed since January 1, 1970
+				return Date.now(); //using javascript 'date' object access its now() function - using the 'dot' seperator
+			}
+
+
+			function fnNowTime() {
+				//this function concatenates the various return values from the executed functions in order to provide a string containing the current time in hh:mm:ss
+				const cNow = new Date(fnNowMS()); //create a date object using the NowMS function 
+				return cNow.getHours() + ":" + cNow.getMinutes() + ":" + cNow.getSeconds(); //return the time using the associated time methods of javascripts date object
+			}
+
+
+			function fnFramesPerSecond() {
+				//this function returns the frame rate as frames per second
+				var iFrameRate; //declare a variable used to hold the result of the frame rate calculation
+				//performance.now() returns a time index that is relative to page being loaded; it is more precise than date.now() and should be used in benchmarking and high-resolution time requirement such as gaming, audio, video, etc.
+				iFrameRate = Math.floor(1 / ((performance.now() - iLastFrameTime) * 0.001)); //calculate the frames per second; multipling by 0.001 is the same a dividing by 1000 (but the times (multiplication) operation is faster in terms of computer cycles and operations - this sort of issue should be discussed in topics like computer platforms, etc)
+				iLastFrameTime = performance.now(); //update the last animation time; used for the next calculation
+				return iFrameRate;
+			}
+
+
+			function fnLoadImages() {
+				//this function can be used to load all the associated images
+				fnDebugMessage("start loading images");
+				
+				//add an individual line for each image to be loaded 
+				fnNewImage(0, "img/sky.png", 3000, 1800, "sky", 0, 0); //use the fnnewimage function to add a specific image to the image array using its index, as well as its source (location), width, height, friendly reference (e.g. a title) and its starting x and y
+				fnNewImage(1, "img/redpilot.png", 170, 120, "redpilot", 40, 100); //use the fnnewimage function to add a specific image to the image array using its index, as well as its source (location), width, height, friendly reference (e.g. a title) and its starting x and y
+			}
+
+
+			function fnInitialise(iLogicLoop) {
+				//this function is called once the <body> tag has completely loaded; all the child elements have loaded completely 
+				//the function expects one argument, the time in milliseconds for each logic loop
+				var iBroswerWidth, iBroswerHeight;
+
+				//lets use javascript to make the canvas element full screen
+				iBroswerWidth = window.innerWidth; //use javascript to get the property value of the window object's inner width, the width of the browser window
+				iBroswerHeight = window.innerHeight; //use javascript to get the property value of the window object's inner height, the height of the browser window
+
+				oCanvas = document.getElementById("gameCanvas"); //use the document object's function getElementById to get the canvas object  
+				if (oCanvas.getContext) { //check to see if we can get the canvas' context 
+					oContext = oCanvas.getContext("2d"); //set the canvas' context to 2D
+				
+					//use javascript to set the size of the canvas, this could be done in the canvas tag <canvas width=xx height=xx> but setting it programmatically is more flexible and more programmatic :) 
+					oCanvas.width = iBroswerWidth; //set the canvas size based on the width of the browser window, although this works on chrome, this property value may not work on ALL browser
+					oCanvas.height = iBroswerHeight; //set the canvas height based on the height of the browser window, although this works on chrome, this property value may not work on ALL browsers
+
+					fnDebugMessage("canvas set to 2D, width: " + iBroswerWidth + ", height: " + iBroswerHeight); //debug message, if this message appears in the console we know everything is okay for the moment
+
+					fnLaunchGame(iLogicLoop); //pass the logic loop time to the launch game function
+
+
+				} else {
+					fnDebugMessage("failed to set canvas to 2D"); //debug message, if this message appears in the console we were not able to 'find' the canvas
+				}
+
+			}
+
+
+			function fnNewImage(iIndex, sSource, iWidth, iHeight, sReference, iXStartlocation, iYStartLocation) {
+				//this function creates a new graphics picture (expect the index of the array, the source, width, height, starting x and starting y) by creating a image object; after creating the new image object it assigns it to the imgPic array (based on the index) then use the image's source property to specifc where the image is located
+				fnDebugMessage("new image: " + sReference + " - array index: " + iIndex + ", width: " + iWidth + ", height: " + iHeight + ", source: " + sSource);
+				imgPic[iIndex] = new Image(iWidth, iHeight); //set the specific array variable to a new image object
+				imgPic[iIndex].src = sSource; //because we have created an image object we can now access it's properties and methods using the 'dot' notation
+			
+				imgPic[iIndex].dataset.x = iXStartlocation; //add some custom properties, assign via the dataset property - lets use this feature to store the starting location for this image
+				imgPic[iIndex].dataset.y = iYStartLocation;
+				imgPic[iIndex].dataset.reference = sReference; //assign it a name (title) that we can use to identify it
+			}
+
+
+			function fnLaunchGame(iLogicLoop) {
+				//this function is used to start the game, it expects 1 argument which is used to set the logic loop interval in milliseconds
+				fnDebugMessage("launching game: " + fnNowTime() + " - logic loop every: " + iLogicLoop + " milliseconds"); //debug message, indicate that the game has been launched
+
+				fnLoadImages(); //execute the function that loads all the images needed
+
+				//add an event listener for any keys that are being used
+				window.addEventListener("keyup", fnKeyboardHandler_KeyReleased, false); //listen for any key up event, if found execute the key released handler function
+				window.addEventListener("keydown", fnKeyboardHandler_KeyPressed, false); //listen for any key down event, if found execute the key pressed handler function
+
+				fnDebugMessage("start game loops");
+				iGameStartTime = fnNowMS(); //store the game's millisecond start time
+				iLogicLoopId=setInterval(fnLogicLoop, iLogicLoop); //start the game logic loop based on the milliseconds provided by iLogicLoop
+				fnAnimationLoop(); //start the animation loop
+			}
+
+
+			function fnQuitGame() {
+				//this function is used to quit the game
+				
+				fnDebugMessage("quitting game: removing event listeners for keyup and keydown"); //debug message, indicate that the game has ceased and the event listeners will be removed
+				window.removeEventListener("keyup", fnKeyboardHandler_KeyReleased, false); //remove the event listener for the key up events
+				window.removeEventListener("keydown", fnKeyboardHandler_KeyPressed, false); //remove the event listener for the key down events
+
+				fnDebugMessage("game ended: " + fnNowTime() + ", game lasted: " + Math.floor((fnNowMS() - iGameStartTime) * 0.001) + " seconds - last logic loop: " + iLogicFrameCount + ", last animation loop: " + iAnimateFrameCount); //debug message, indicate that the game time and duration
+			
+				//the following bit of code use a jquery function. the $ symbol is shorthand for jquery, then there is a selector for the object and the function is called via the 'dot' notation
+				//for more information on this specific function (fadein) search 'jquery fadein'
+				$( "#gameDialogueBox" ).fadeIn( "slow", function() {
+					// fade animation complete, some more instructions can be added here - they will be called once the animation is complete
+					fnDebugMessage("game dialogue box faded in"); //debug message, indicate that the game dialogue has been faded in
+				});
+			}
+
+
+			function fnLogicLoop() {
+				//this function is called for every looping loop - we will use it to control the game logic (machanics)
+				iLogicFrameCount ++; //increment the logic frame count
+				fnDebugMessage("new logic loop: " + iLogicFrameCount); //debug message, indicate that this logic loop has started
+
+				
+				if( fnNowMS()-iGameStartTime >= iAutoExitInSeconds * 1000 ) { //check the time indx to see if the auto exit in seconds has expired, the game time uses milliseconds so we need to convert our seconds count to milliseconds (multiply it by 1000)
+					bContinuePlay = false; //set the continue animation variable to false; set a flag used to stop the animation loop
+				}				
+
+
+				if(bContinuePlay == false) { //check the continue play variable to see if we should stop the game
+					clearInterval(iLogicLoopId); //clear the logic loop using the id create by the setinterval function
+				}
+
+			}
+
+
+			function fnAnimationLoop() {
+				//this function is called every animation loop - we will use it to control the game animation 
+				if(bContinuePlay == true) { //check whether we should comntinue playing, if so - setup the next animation frame
+					iAnimateFrameCount ++; //increment the animate frame count 
+
+					//store the current transformation matrix
+					oContext.save();
+
+					//use the identity matrix while clearing the canvas
+					oContext.setTransform(1, 0, 0, 1, 0, 0);
+					oContext.clearRect(0, 0, oCanvas.width, oCanvas.height);
+
+					//restore the transform
+					oContext.restore();
+
+
+					//begin the redrawing, each image should be drawn in order, images that are drawn later can be used to sit on top of earlier drawn images
+					fnDebugMessage("drawing : " + imgPic[0].dataset.reference + ", x: " + imgPic[0].dataset.x + ", y: " + imgPic[0].dataset.y); //debug message, indicate that this animation loop has started
+					oContext.drawImage(imgPic[0], imgPic[0].dataset.x, imgPic[0].dataset.y);
+
+					fnDebugMessage("drawing : " + imgPic[1].dataset.reference + ", x: " + imgPic[1].dataset.x + ", y: " + imgPic[1].dataset.y); //debug message, indicate that this animation loop has started
+					oContext.drawImage(imgPic[1], imgPic[1].dataset.x, imgPic[1].dataset.y);
+
+
+					fnDebugMessage("new animation loop: " + iAnimateFrameCount + ", frames per second: " + fnFramesPerSecond()); //debug message, indicate that this animation loop has started
+					iAnimationLoopId = window.requestAnimationFrame(fnAnimationLoop); //request an update on the canvas; this tries to keep the graphic updates in sync with the monitor - prevents graphic tearing					
+				} else {
+					//exiting the game
+					fnQuitGame();
+				}
+			}
+
+
+
+			function fnKeyboardHandler_KeyPressed(e) {
+				//this handler function processes any key down events, key down events are raised when any keyboard key is moved to the down (pressed) position
+				e.preventDefault(); //this function linked to the e (e.g. event) is used to try to prevernt/suppress any default actions already associated with the key currently being pressed
+				e.stopImmediatePropagation(); //this function (link to the event) is used to stop any further 'bubbling' or 'propagation' of other events that might be associated with the key currently being pressed
+
+				fnDebugMessage("key press detected: " + e.keyCode + ", name: " + e.key); //debug message, indicate the code of the key associated with the event
+
+				//check to see which key is being pressed and process any specific actions associated with that key 
+				if(e.keyCode == 39) { //right arrow key
+					//because javascript is generally a dynamic, weakly typed language and because we are storing numbers in a property associatated with a image object
+					//the value return by imgPic[1].dataset.x is (by default) inferred to be a string which means if we 'add' 10 to a value (for example) 22 the result is "2210" - this is a problem!!
+					//to help the 'inferred' process get it right (and wanting to keep the operations as fast as possible) we can simply multiply the value by 1; this helps the javascript interpreter realise 
+					//we are working with numbers not sting versions of numbers.  once we've done that we can now add our value to our number (this is also sometimes called 'casting' - you cast one datatype as another; 
+					//think about actors being asked to play different roles)  
+					imgPic[1].dataset.x = (1 * imgPic[1].dataset.x) + 10; //cast the dataset.x property as a number then add a value to it - then store the result back in the dataset.x property (in essence we are simply 'updating' the x value)
+				}
+
+
+				
+			}
+
+			function fnKeyboardHandler_KeyReleased(e) {
+				//this function processes any key up events, key up events are raise when any keyboard key is moved to the up (released) position
+				e.preventDefault(); //this function linked to the e (e.g. event) is used to try to prevernt/suppress any default actions already associated with the key currently being pressed
+				e.stopImmediatePropagation(); //this function (link to the event) is used to stop any further 'bubbling' or 'propagation' of other events that might be associated with the key currently being pressed
+
+				fnDebugMessage("key release detected: " + e.keyCode); //debug message, indicate the code of the key associated with the event
+
+				//check to see which key has been released and process any specific actions associated with that key 
+			}
+
+
+		</script>
+	
+	</head>
+	
+	<body onload="fnInitialise(500)">
+		<div id="gameContainer">
+			<canvas id="gameCanvas"></canvas>
+			<div id="gameDialogueBox">
+				<div id="gameDialogueBoxText">Game Over</div>
+			</div>
+		</div>
+	</body>
+
+</html>
